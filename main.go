@@ -2,8 +2,12 @@ package main
 
 import (
 	"fmt"
+	"buffio"
 )
 
 func main() {
-	fmt.Println(cleanInput("Hello, World!"))
+	for {
+		fmt.Print("Pokedex >")
+		buffio.NewScanner()
+	}
 }
