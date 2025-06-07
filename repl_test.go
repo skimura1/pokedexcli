@@ -31,7 +31,6 @@ func TestCleanInput(t *testing.T) {
 		if len(actual) != len(c.expected){
 			t.Errorf("Test Failed: The the lengths do not match!")
 		}
-		fmt.Println(actual)
 
 		for i := range actual {
 			word := actual[i]
