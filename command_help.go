@@ -1,8 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/skimura1/pokedexcli/internal/types"
+)
 
-func commandHelp() error {
+func commandHelp(cfg *types.Config) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:\n")
 

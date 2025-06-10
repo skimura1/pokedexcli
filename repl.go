@@ -5,11 +5,17 @@ import (
 	"os"
 	"bufio"
 	"fmt"
+	"github.com/skimura1/pokedexcli/internal/pokedexapi"
+	"github.com/skimura1/pokedexcli/internal/types"
 )
+
 
 func startRepl() {
 
 	scanner := bufio.NewScanner(os.Stdin)
+	config := &types.Config{
+		PageNumber: 0,
+	}
 	for {
 		fmt.Print("Pokedex > ")
 		scanner.Scan();
@@ -23,7 +29,7 @@ func startRepl() {
 
 		command, exists := getCommands()[commandName]
 		if exists {
-			err := command.callback(); if err != nil {
+			err := command.callback(config); if err != nil {
 				fmt.Println(err)
 			}
 			continue
@@ -43,7 +49,7 @@ func cleanInput(text string) []string {
 type cliCommand struct {
 	name			string
 	description		string
-	callback		func() error
+	callback		func(*types.Config) error
 }
 
 func getCommands() map[string]cliCommand {
@@ -57,6 +63,16 @@ func getCommands() map[string]cliCommand {
 			name:		 "exit",
 			description: "Exit the Pokedex",
 			callback:	 commandExit,
+		},
+		"map": {
+			name:		 "map",
+			description: "Display next 20 locations",
+			callback:	 pokedexapi.CommandMap,
+		},
+		"mapb": {
+			name:		"mapb",
+			description: "Diplays previous 20 locations",
+			callback:	 pokedexapi.CommandMapB,
 		},
 	}
 }
