@@ -24,7 +24,7 @@ func commandMapb(cfg *config) error {
 	if cfg.prevLocationsURL == nil {
 		return errors.New("you're on the first page")
 	}
-	locationsResp, err := cfg.pokeapiClient.ListLocations(cfg.nextLocationsURL)
+	locationsResp, err := cfg.pokeapiClient.ListLocations(cfg.prevLocationsURL)
 	if err != nil {
 		return err
 	}
