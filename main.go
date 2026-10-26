@@ -1,18 +1,19 @@
 package main
 
-import (
-	"bufio"
-	"fmt"
-	"os"
-)
-
 func main() {
-	scanner := bufio.NewScanner(os.Stdin)
-	for {
-		fmt.Print("Pokedex >")
-		if scanner.Scan() {
-			inputArray := cleanInput(scanner.Text())
-			fmt.Printf("Your command was: %s\n", inputArray[0])
-		}
+	config := config{
+		commandRegistry: map[string]cliCommand{
+			"exit": {
+				name:        "exit",
+				description: "Exit the Pokedex",
+				callback:    commandExit,
+			},
+			"help": {
+				name:        "help",
+				description: "Displays a help message",
+				callback:    commandHelp,
+			},
+		},
 	}
+	repl(&config)
 }
