@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/skimura/pokedexcli/internal/pokecache"
+	"pokedexcli/internal/pokecache"
 )
 
 func main() {

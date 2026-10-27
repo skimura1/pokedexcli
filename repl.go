@@ -10,13 +10,15 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"pokedexcli/internal/pokecache"
 )
 
 type config struct {
 	commandRegistry map[string]cliCommand
 	nextMap         string
 	previousMap     *string
-	cache           *cache
+	cache           *pokecache.Cache
 }
 
 type cliCommand struct {
@@ -51,18 +53,24 @@ func commandHelp(config *config) error {
 }
 
 func commandMap(config *config) error {
-	res, err := http.Get(config.nextMap)
-	if err != nil {
-		return err
+	_, exists := config.cache.Get(config.nextMap)
+	if !exists {
+		res, err := http.Get(config.nextMap)
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		if res.StatusCode > 299 {
+			log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+		}
+		if err != nil {
+			return err
+		}
+		config.cache.Add(config.nextMap, body)
 	}
-	defer res.Body.Close()
-	body, err := io.ReadAll(res.Body)
-	if res.StatusCode > 299 {
-		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
-	}
-	if err != nil {
-		return err
-	}
+	body, _ := config.cache.Get(config.nextMap)
+
 	var target Map
 	if err := json.Unmarshal(body, &target); err != nil {
 		fmt.Printf("Error unmarshaling JSON: %v\n", err)
@@ -81,18 +89,23 @@ func commandMapb(config *config) error {
 	if config.previousMap == nil {
 		return errors.New("No previous map")
 	}
-	res, err := http.Get(*config.previousMap)
-	if err != nil {
-		return err
+	_, exists := config.cache.Get(*config.previousMap)
+	if !exists {
+		res, err := http.Get(*config.previousMap)
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		if res.StatusCode > 299 {
+			log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+		}
+		if err != nil {
+			return err
+		}
+		config.cache.Add(*config.previousMap, body)
 	}
-	defer res.Body.Close()
-	body, err := io.ReadAll(res.Body)
-	if res.StatusCode > 299 {
-		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
-	}
-	if err != nil {
-		return err
-	}
+	body, _ := config.cache.Get(*config.previousMap)
 	var target Map
 	if err := json.Unmarshal(body, &target); err != nil {
 		fmt.Printf("Error unmarshaling JSON: %v\n", err)
