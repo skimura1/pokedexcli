@@ -1,6 +1,13 @@
 package main
 
+import (
+	"time"
+
+	"github.com/skimura/pokedexcli/internal/pokecache"
+)
+
 func main() {
+	c := pokecache.NewCache(10 * time.Second)
 	config := config{
 		commandRegistry: map[string]cliCommand{
 			"exit": {
@@ -13,7 +20,20 @@ func main() {
 				description: "Displays a help message",
 				callback:    commandHelp,
 			},
+			"map": {
+				name:        "map",
+				description: "Displays location on the map",
+				callback:    commandMap,
+			},
+			"mapb": {
+				name:        "mapb",
+				description: "Displays previous locations on the map",
+				callback:    commandMapb,
+			},
 		},
+		cache:       c,
+		nextMap:     "https://pokeapi.co/api/v2/location-area/",
+		previousMap: nil,
 	}
 	repl(&config)
 }

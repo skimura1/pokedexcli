@@ -2,19 +2,37 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
 	"os"
 	"strings"
 )
 
 type config struct {
 	commandRegistry map[string]cliCommand
+	nextMap         string
+	previousMap     *string
+	cache           *cache
 }
 
 type cliCommand struct {
 	name        string
 	description string
 	callback    func(*config) error
+}
+
+type Map struct {
+	Count    int     `json:"count"`
+	Next     string  `json:"next"`
+	Previous *string `json:"previous"`
+	Result   []struct {
+		Name string `json:"name"`
+		URL  string `json:"URL"`
+	} `json:"results"`
 }
 
 func commandExit(config *config) error {
@@ -29,6 +47,63 @@ func commandHelp(config *config) error {
 	for commandName, commandMap := range config.commandRegistry {
 		fmt.Printf("%s: %s\n", commandName, commandMap.description)
 	}
+	return nil
+}
+
+func commandMap(config *config) error {
+	res, err := http.Get(config.nextMap)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if res.StatusCode > 299 {
+		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+	}
+	if err != nil {
+		return err
+	}
+	var target Map
+	if err := json.Unmarshal(body, &target); err != nil {
+		fmt.Printf("Error unmarshaling JSON: %v\n", err)
+		return nil
+	}
+	locations := target.Result
+	for _, location := range locations {
+		fmt.Println(location.Name)
+	}
+	config.nextMap = target.Next
+	config.previousMap = target.Previous
+	return nil
+}
+
+func commandMapb(config *config) error {
+	if config.previousMap == nil {
+		return errors.New("No previous map")
+	}
+	res, err := http.Get(*config.previousMap)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	if res.StatusCode > 299 {
+		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+	}
+	if err != nil {
+		return err
+	}
+	var target Map
+	if err := json.Unmarshal(body, &target); err != nil {
+		fmt.Printf("Error unmarshaling JSON: %v\n", err)
+		return nil
+	}
+	locations := target.Result
+	for _, location := range locations {
+		fmt.Println(location.Name)
+	}
+	config.nextMap = target.Next
+	config.previousMap = target.Previous
 	return nil
 }
 
