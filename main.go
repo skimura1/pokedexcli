@@ -35,11 +35,18 @@ func main() {
 				description: "Displays name of all Pokemon in that area",
 				callback:    commandExplore,
 			},
+			"catch": {
+				name:        "catch",
+				description: "Attempt to catch the pokemon",
+				callback:    commandCatch,
+			},
 		},
 		cache:       c,
 		nextMap:     "https://pokeapi.co/api/v2/location-area/",
 		previousMap: nil,
 		location:    "",
+		pokemon:     "",
+		pokedex:     map[string]Pokemon{},
 	}
 	repl(&config)
 }
