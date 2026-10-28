@@ -14,11 +14,14 @@ import (
 	"pokedexcli/internal/pokecache"
 )
 
+var POKEMON_LOCATION_AREA_API = "https://pokeapi.co/api/v2/location-area/"
+
 type config struct {
 	commandRegistry map[string]cliCommand
 	nextMap         string
 	previousMap     *string
 	cache           *pokecache.Cache
+	location        string
 }
 
 type cliCommand struct {
@@ -37,6 +40,60 @@ type Map struct {
 	} `json:"results"`
 }
 
+type Area struct {
+	ID                   int    `json:"id"`
+	Name                 string `json:"name"`
+	GameIndex            int    `json:"game_index"`
+	EncounterMethodRates []struct {
+		EncounterMethod struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"encounter_method"`
+		VersionDetails []struct {
+			Rate    int `json:"rate"`
+			Version struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			} `json:"version"`
+		} `json:"version_details"`
+	} `json:"encounter_method_rates"`
+	Location struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"location"`
+	Names []struct {
+		Name     string `json:"name"`
+		Language struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"language"`
+	} `json:"names"`
+	PokemonEncounters []struct {
+		Pokemon struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"pokemon"`
+		VersionDetails []struct {
+			Version struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			} `json:"version"`
+			MaxChance        int `json:"max_chance"`
+			EncounterDetails []struct {
+				MinLevel int `json:"min_level"`
+				MaxLevel int `json:"max_level"`
+				Chance   int `json:"chance"`
+				Method   struct {
+					Name string `json:"name"`
+					URL  string `json:"url"`
+				} `json:"method"`
+				ConditionValues []any `json:"condition_values"`
+				PokemonDetails  any   `json:"pokemon_details"`
+			} `json:"encounter_details"`
+		} `json:"version_details"`
+	} `json:"pokemon_encounters"`
+}
+
 func commandExit(config *config) error {
 	fmt.Printf("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
@@ -45,7 +102,7 @@ func commandExit(config *config) error {
 
 func commandHelp(config *config) error {
 	fmt.Println("Welcome to the Pokedex!")
-	fmt.Println("Usage: \n")
+	fmt.Println("Usage: ")
 	for commandName, commandMap := range config.commandRegistry {
 		fmt.Printf("%s: %s\n", commandName, commandMap.description)
 	}
@@ -120,6 +177,44 @@ func commandMapb(config *config) error {
 	return nil
 }
 
+func commandExplore(config *config) error {
+	location := config.location
+	if len(config.location) == 0 {
+		return errors.New("No location! Please provide a location to explore")
+	}
+	_, exists := config.cache.Get(location)
+	if !exists {
+		URL := POKEMON_LOCATION_AREA_API + location
+		res, err := http.Get(URL)
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		if res.StatusCode > 299 {
+			log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+		}
+		if err != nil {
+			return err
+		}
+		config.cache.Add(location, body)
+	}
+	body, _ := config.cache.Get(location)
+	var target Area
+	if err := json.Unmarshal(body, &target); err != nil {
+		fmt.Printf("Error unmarshaling JSON: %v\n", err)
+		return nil
+	}
+	fmt.Println("Exploring " + location)
+	fmt.Println("Found Pokemon: ")
+	pokemonEncounters := target.PokemonEncounters
+	for _, encounters := range pokemonEncounters {
+		fmt.Println(" - " + encounters.Pokemon.Name)
+	}
+	config.location = ""
+	return nil
+}
+
 func cleanInput(text string) []string {
 	lowercasedString := strings.ToLower(text)
 	return strings.Fields(lowercasedString)
@@ -132,6 +227,11 @@ func repl(config *config) {
 		if scanner.Scan() {
 			inputArray := cleanInput(scanner.Text())
 			if command, ok := config.commandRegistry[inputArray[0]]; ok {
+				if inputArray[0] == "explore" {
+					if len(inputArray) == 2 {
+						config.location = inputArray[1]
+					}
+				}
 				if err := command.callback(config); err != nil {
 					fmt.Println("Error ocurred: ", err)
 				}

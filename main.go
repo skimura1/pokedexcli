@@ -30,10 +30,16 @@ func main() {
 				description: "Displays previous locations on the map",
 				callback:    commandMapb,
 			},
+			"explore": {
+				name:        "explore",
+				description: "Displays name of all Pokemon in that area",
+				callback:    commandExplore,
+			},
 		},
 		cache:       c,
 		nextMap:     "https://pokeapi.co/api/v2/location-area/",
 		previousMap: nil,
+		location:    "",
 	}
 	repl(&config)
 }
