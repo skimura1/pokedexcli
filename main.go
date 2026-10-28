@@ -45,6 +45,11 @@ func main() {
 				description: "Display the base stats of the Pokemon",
 				callback:    commandInspect,
 			},
+			"pokedex": {
+				name:        "pokedex",
+				description: "Display pokemon that have been caught",
+				callback:    commandPokedex,
+			},
 		},
 		cache:       c,
 		nextMap:     "https://pokeapi.co/api/v2/location-area/",

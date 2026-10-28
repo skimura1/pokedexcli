@@ -772,6 +772,18 @@ func commandInspect(config *config) error {
 	return nil
 }
 
+func commandPokedex(config *config) error {
+	pokedex := config.pokedex
+	if len(pokedex) != 0 {
+		for key := range pokedex {
+			fmt.Println("  - " + key)
+		}
+	} else {
+		fmt.Println("Error: Pokedex is empty! Please catch pokemon!")
+	}
+	return nil
+}
+
 func cleanInput(text string) []string {
 	lowercasedString := strings.ToLower(text)
 	return strings.Fields(lowercasedString)
