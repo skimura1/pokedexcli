@@ -735,18 +735,40 @@ func commandCatch(config *config) error {
 	name := target.Name
 	chance := 100 - (target.BaseExperience / 100)
 	n := rand.Intn(100)
-	if _, ok := config.pokedex[name]; ok {
+	if _, ok := config.pokedex[pokemon]; ok {
 		fmt.Println(name + " already caught")
 	} else {
 		fmt.Println("Throwing a Pokeball at " + name + "...")
 		if n < chance {
 			fmt.Println(name + " was caught")
-			config.pokedex[name] = target
+			config.pokedex[pokemon] = target
 		} else {
 			fmt.Println(name + " escaped!")
 		}
 	}
 	config.pokemon = ""
+	return nil
+}
+
+func commandInspect(config *config) error {
+	pokemon, ok := config.pokedex[config.pokemon]
+	if ok {
+		fmt.Printf("Height: %d\n", pokemon.Height)
+		fmt.Printf("Weight: %d\n", pokemon.Weight)
+		fmt.Println("Stats: ")
+		stats := pokemon.Stats
+		types := pokemon.Types
+		for _, stat := range stats {
+			fmt.Printf("  - %s: %d\n", stat.Stat.Name, stat.BaseStat)
+		}
+		fmt.Println("Types: ")
+		for _, t := range types {
+			fmt.Println("  - " + t.Type.Name)
+		}
+	} else {
+		fmt.Println("Error: " + pokemon.Name + " doesn't exist in pokedex! Please catch the pokemon")
+	}
+
 	return nil
 }
 
@@ -768,6 +790,11 @@ func repl(config *config) {
 					}
 				}
 				if inputArray[0] == "catch" {
+					if len(inputArray) == 2 {
+						config.pokemon = inputArray[1]
+					}
+				}
+				if inputArray[0] == "inspect" {
 					if len(inputArray) == 2 {
 						config.pokemon = inputArray[1]
 					}
